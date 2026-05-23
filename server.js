@@ -9,15 +9,15 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // CORS Configuration
-app.use(cors({
+const corsOptions = {
   origin: 'https://itms.brainovision.in',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
-}));
+};
+
+app.use(cors(corsOptions));
 
 // Handle Preflight Requests
-app.options('*', cors());
+app.options(/.*/, cors(corsOptions));
 
 // Middleware
 app.use(express.json());
