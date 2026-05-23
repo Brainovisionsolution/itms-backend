@@ -1,0 +1,5 @@
+{
+  "ignore": ["*.db", "*.db-journal", "uploads/*", "node_modules"],
+  "watch": ["**/*.js", ".env"],
+  "ext": "js,json"
+}

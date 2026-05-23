@@ -1,0 +1,224 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id           Int            @id @default(autoincrement())
+  name         String
+  email        String         @unique
+  password     String
+  role         String         @default("STUDENT") // ADMIN, TRAINER, or STUDENT
+  college      String?
+  domainId     Int?
+  
+  // OTP & Verification
+  isVerified   Boolean        @default(false)
+  isApproved   Boolean        @default(false) // New: Admin Approval
+  otp          String?
+  otpExpires   DateTime?
+
+  domain       Domain?        @relation(fields: [domainId], references: [id])
+  groups       Group[]        @relation("UserGroups")
+  trainerGroups Group[]       @relation("TrainerGroups")
+  tasks        TaskProgress[]
+  attendance   Attendance[]
+  payment      Payment?
+  feedback     Feedback[]
+  documents    Document?
+  profile      InternProfile? // Linked profile
+  materials    StudyMaterial[]
+  groupMessages GroupMessage[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+}
+
+model InternProfile {
+  id                               Int       @id @default(autoincrement())
+  userId                           Int       @unique
+  user                             User      @relation(fields: [userId], references: [id])
+  
+  paymentPageTitle                 String?
+  paymentDate                      DateTime?
+  registrationAmount               Float?
+  phone                            String?
+  gender                           String?
+  state                            String?
+  branch                           String?
+  yearOfPassingOut                 String?
+  internshipProgram                String?
+  technology                       String?
+  startDate                        DateTime?
+  timings                          String?
+  duration                         String?
+  venuePreference                  String?
+  referredPersonName               String?
+  internshipId                     String?
+  studentComingDate                DateTime?
+  officeInDate                     DateTime?
+  studentStatus                    String?
+  studentRemarks                   String?
+  offerLetter                      String?
+  idCard                           String?
+  welcomeKit                       String?
+  totalPayment                     Float?
+  registrationPayment              Float?
+  discount                         Float?
+  balance                          Float?    @default(421000)
+  installment1                     Float?    @default(0)
+  installDate1                     DateTime?
+  paymentMode                      String?
+  installment2                     Float?    @default(0)
+  dateOfFullPayment                DateTime?
+  totalPaymentMode                 String?
+  balanceAfterInstallments         Float?
+  cashAmount                       Float?
+  classTimings                     String?
+  attendance                       String?
+  assignments                      String?
+  projectTitle                     String?
+  internshipCompletionCertificate  String?
+  projectCompletionCertificate     String?
+  exitDate                         DateTime?
+  remarks                          String?
+}
+
+model Domain {
+  id      Int     @id @default(autoincrement())
+  name    String  @unique
+  groups  Group[]
+  users   User[]
+  tasks   Task[]
+}
+
+model Group {
+  id              Int             @id @default(autoincrement())
+  name            String
+  domainId        Int
+  domain          Domain          @relation(fields: [domainId], references: [id])
+  users           User[]          @relation("UserGroups")
+  tasks           Task[]
+  materials       StudyMaterial[]
+  reviewRequests  ReviewRequest[]
+  messages        GroupMessage[]
+  trainerId       Int?
+  trainer         User?           @relation("TrainerGroups", fields: [trainerId], references: [id])
+
+  @@unique([name, domainId])
+}
+
+
+model StudyMaterial {
+  id           Int      @id @default(autoincrement())
+  title        String
+  message      String?
+  fileUrl      String?
+  groupId      Int
+  group        Group    @relation(fields: [groupId], references: [id])
+  uploadedById Int?
+  uploadedBy   User?    @relation(fields: [uploadedById], references: [id])
+  createdAt    DateTime @default(now())
+}
+
+
+model Task {
+  id             Int            @id @default(autoincrement())
+  title          String
+  description    String
+  resources      String?        
+  dayNumber      Int            
+  assignedToType String         // DOMAIN, GROUP, USER
+  assignedToId   Int
+  type           String         @default("QA") // QA, MCQ, CODE
+  taskData       String?        // JSON string for MCQ options, boilerplate code, etc.
+  domain         Domain?        @relation(fields: [domainId], references: [id])
+  group          Group?         @relation(fields: [groupId], references: [id])
+  domainId       Int?
+  groupId        Int?
+  progress       TaskProgress[]
+}
+
+model TaskProgress {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  taskId    Int
+  status         String   @default("YET_TO_START") 
+  fileUrl        String?  
+  remarks        String?  
+  submissionData String?  // Store student's code, MCQ answers, or text response
+  score          Float?   // Evaluation score/marks
+  user           User     @relation(fields: [userId], references: [id])
+  task           Task     @relation(fields: [taskId], references: [id])
+  updatedAt      DateTime @updatedAt
+
+  @@unique([userId, taskId])
+}
+
+model Attendance {
+  id     Int      @id @default(autoincrement())
+  userId Int
+  date   DateTime @default(now())
+  status String   
+  user   User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, date])
+}
+
+model Payment {
+  id            Int    @id @default(autoincrement())
+  userId        Int    @unique
+  totalFee      Float
+  paidAmount    Float  @default(0)
+  pendingAmount Float
+  status        String @default("PENDING") 
+  user          User   @relation(fields: [userId], references: [id])
+}
+
+model Feedback {
+  id              Int            @id @default(autoincrement())
+  userId          Int
+  reviewRequestId Int
+  rating          Int
+  comment         String
+  user            User           @relation(fields: [userId], references: [id])
+  reviewRequest   ReviewRequest  @relation(fields: [reviewRequestId], references: [id])
+  createdAt       DateTime       @default(now())
+
+  @@unique([userId, reviewRequestId])
+}
+
+model ReviewRequest {
+  id          Int        @id @default(autoincrement())
+  day         Int
+  description String
+  groupId     Int
+  group       Group      @relation(fields: [groupId], references: [id])
+  feedbacks   Feedback[]
+  createdAt   DateTime   @default(now())
+}
+
+
+model Document {
+  id           Int     @id @default(autoincrement())
+  userId       Int     @unique
+  offerLetter  Boolean @default(false)
+  certificate  Boolean @default(false)
+  user         User    @relation(fields: [userId], references: [id])
+}
+
+model GroupMessage {
+  id        Int      @id @default(autoincrement())
+  content   String
+  groupId   Int
+  group     Group    @relation(fields: [groupId], references: [id])
+  senderId  Int
+  sender    User     @relation(fields: [senderId], references: [id])
+  createdAt DateTime @default(now())
+}
