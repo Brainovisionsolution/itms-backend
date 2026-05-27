@@ -6,19 +6,16 @@ const path = require('path');
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 // =========================
 // CORS CONFIGURATION
 // =========================
 
-const corsOptions = {
+app.use(cors({
   origin: 'https://itms.brainovision.in',
   credentials: true
-};
-
-app.use(cors(corsOptions));
-app.options(/.*/, cors(corsOptions));
+}));
 
 // =========================
 // MIDDLEWARE
